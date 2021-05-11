@@ -1,0 +1,416 @@
+*** family policy
+
+
+cd "..."
+log using "...family_policy_main_20200225.smcl", replace 
+
+
+*** sample of countries
+
+reg fi_moderate female age age2 i.marital i.rural_urban i.emp_status friends counton ///
+	log_gdp_percap_PPPcon_wb i.chld_under15_c2 fb_leg_x_v2, cluster(cid)
+gen sample = e(sample)
+
+fre countrynew if sample==1
+	
+** table 1: food insecurity and having children
+
+
+melogit fi_moderate female age age2 i.marital i.rural_urban i.emp_status friends counton ///
+	log_gdp_percap_PPPcon_wb i.chld_under15_c2  || countrynew: , vce(cluster cid) intmethod(laplace) 
+
+margin chld_under15_c2, post
+estimates save "Results\child_logit_mod_20200225.ster", replace
+mlincom, clear
+qui mlincom 1, stat(est se p ll ul) add rowname("Pr(Food insecurity): No policy") 
+qui mlincom 2, stat(est se p ll ul) add rowname("Pr(Food insecurity): Policy")
+qui mlincom 2-1, stat(est se p ll ul) add rowname("AME Child: Difference")
+mlincom, twidth(20) title("Pr(Food insecurity) - Interaction Effects of Policy x Parent") dec(5)
+
+	
+melogit fi_severe female age age2 i.marital i.rural_urban i.emp_status friends counton ///
+	log_gdp_percap_PPPcon_wb i.chld_under15_c2 || countrynew: , vce(cluster cid) intmethod(laplace) 
+
+margin chld_under15_c2, post
+estimates save "Results\child_logit_sev_20200225.ster", replace
+mlincom, clear
+qui mlincom 1, stat(est se p ll ul) add rowname("Pr(Food insecurity): No policy") 
+qui mlincom 2, stat(est se p ll ul) add rowname("Pr(Food insecurity): Policy")
+qui mlincom 2-1, stat(est se p ll ul) add rowname("AME Child: Difference")
+mlincom, twidth(20) title("Pr(Food insecurity) - Interaction Effects of Policy x Parent") dec(5)
+
+** table 2: policies across whole population
+
+foreach var of varlist fb_leg_x_v2 fb_birthsupp_amt_y_v2 fb_modelfam_presch_y_v2 /// 
+	fb_modelfam_school_y_v2 fb_modelfam_teen_y_v2 fb_ccschsupp_v2 {
+	melogit fi_moderate female age age2 i.marital i.rural_urban i.emp_status friends counton ///
+	log_gdp_percap_PPPcon_wb i.chld_under15_c2 i.`var' || countrynew: , vce(cluster cid) intmethod(laplace) 
+	margins , at(`var'=(0 1)) post force
+	estimates save "Results\`var'_mod_logit_20200225_M.ster", replace
+	mlincom, clear
+	qui mlincom 1, stat(est se p ll ul) add rowname("Pr(Food insecurity): No policy") 
+	qui mlincom 2, stat(est se p ll ul) add rowname("Pr(Food insecurity): Policy")
+	qui mlincom 1 - 2, stat(est se p ll ul) add rowname("AME Child: Difference")
+	mlincom, twidth(20) title("Pr(Food insecurity) - Interaction Effects of Policy x Parent") dec(5)
+	}	
+
+foreach var of varlist fb_leg_x_v2 fb_birthsupp_amt_y_v2 fb_modelfam_presch_y_v2 /// 
+	fb_modelfam_school_y_v2 fb_modelfam_teen_y_v2 fb_ccschsupp_v2 {
+	melogit fi_severe female age age2 i.marital i.rural_urban i.emp_status friends counton ///
+	log_gdp_percap_PPPcon_wb i.chld_under15_c2 i.`var' || countrynew: , vce(cluster cid) intmethod(laplace) 
+	margins , at(`var'=(0 1)) post force
+	estimates save "Results\`var'_sev_logit_20200225_M.ster", replace
+	mlincom, clear
+	qui mlincom 1, stat(est se p ll ul) add rowname("Pr(Food insecurity): No policy") 
+	qui mlincom 2, stat(est se p ll ul) add rowname("Pr(Food insecurity): Policy")
+	qui mlincom 1 - 2, stat(est se p ll ul) add rowname("AME Child: Difference")
+	mlincom, twidth(20) title("Pr(Food insecurity) - Interaction Effects of Policy x Parent") dec(5)
+	}	
+	
+	
+
+
+
+
+** figure 1 and 2: additional child and family policy
+ 
+foreach var of varlist fb_leg_x_v2 fb_birthsupp_amt_y_v2 fb_modelfam_presch_y_v2 /// 
+	fb_modelfam_school_y_v2 fb_modelfam_teen_y_v2 fb_ccschsupp_v2 {
+	melogit fi_moderate female age age2 i.marital i.rural_urban i.emp_status friends counton ///
+	log_gdp_percap_PPPcon_wb i.chld_under15_c2##i.`var' || countrynew: , vce(cluster cid) intmethod(laplace) 
+	margins, dydx(chld_under15_c2) at(`var'=(0 1)) post force
+	estimates save "Results\`var'_chld_mod_logit_M.ster", replace
+	mlincom, clear
+	qui mlincom 1, stat(est se p ll ul) add rowname("Pr(Food insecurity): No policy") 
+	qui mlincom 2, stat(est se p ll ul) add rowname("Pr(Food insecurity): Policy")
+	qui mlincom 1 - 2, stat(est se p ll ul) add rowname("AME Child: Difference")
+	mlincom, twidth(20) title("Pr(Food insecurity) - Interaction Effects of Policy x Parent") dec(5)
+	}	
+
+	
+foreach var of varlist fb_leg_x_v2 fb_birthsupp_amt_y_v2 fb_modelfam_presch_y_v2 /// 
+	fb_modelfam_school_y_v2 fb_modelfam_teen_y_v2 fb_ccschsupp_v2 {
+	melogit fi_severe female age age2 i.marital i.rural_urban i.emp_status friends counton ///
+	log_gdp_percap_PPPcon_wb i.chld_under15_c2##i.`var' || countrynew: , vce(cluster cid) intmethod(laplace) 
+	margins, dydx(chld_under15_c2) at(`var'=(0 1)) post force
+	estimates save "Results\`var'_chld_sev_logit_M.ster", replace
+	mlincom, clear
+	qui mlincom 1, stat(est se p ll ul) add rowname("Pr(Food insecurity): No policy") 
+	qui mlincom 2, stat(est se p ll ul) add rowname("Pr(Food insecurity): Policy")
+	qui mlincom 1 - 2, stat(est se p ll ul) add rowname("AME Child: Difference")
+	mlincom, twidth(20) title("Pr(Food insecurity) - Interaction Effects of Policy x Parent") dec(5)
+	}
+
+	
+	
+	
+** table 3-way - child, policy, income dist
+	
+	
+foreach var of varlist fb_leg_x_v2 fb_birthsupp_amt_y_v2 fb_modelfam_presch_y_v2 /// 
+	fb_modelfam_school_y_v2 fb_modelfam_teen_y_v2 fb_ccschsupp_v2 {
+	melogit fi_moderate female age age2 i.marital i.rural_urban i.emp_status friends counton ///
+	log_gdp_percap_PPPcon_wb i.bottom40##i.chld_under15_c2##i.`var' || countrynew: , vce(cluster cid) intmethod(laplace) 
+	estimates save "Results\`var'_mod_bottom_logit_M.ster", replace
+	estimates use "Results\`var'_mod_bottom_logit_M.ster"
+	estimate esample: 	fi_moderate female age age2 marital rural_urban emp_status friends counton ///
+	log_gdp_percap_PPPcon_wb bottom40 chld_under15_c2 `var' 
+
+	margins, dydx(chld_under15_c2) at(`var'=(0 1) bottom40=(0 1)) post force
+
+	mlincom, clear
+
+	qui mlincom 1, stat(est se p ll ul) add rowname("Pr(Food insecurity):Bottom 40, No policy") 
+	qui mlincom 2, stat(est se p ll ul) add rowname("Pr(Food insecurity):Bottom 40, Policy")
+	qui mlincom 3, stat(est se p ll ul) add rowname("Pr(Food insecurity):Upper 60, No Policy")
+	qui mlincom 4, stat(est se p ll ul) add rowname("Pr(Food insecurity):Upper 60, Policy")
+
+	*Effect of policy for households with no child
+	qui mlincom 1 - 2, stat(est se p ll ul) add rowname("Bottom 40")
+	*Effect of policy for households with a child
+	qui mlincom 3 - 4, stat(est se p ll ul) add rowname("Upper 60")
+	*2nd differences
+	qui mlincom (1 - 2) - (3 - 4), stat(est se p ll ul) add rowname("2nd Diff") 
+	qui mlincom (1 - 3) - (2 - 4), stat(est se p ll ul) add rowname("3rd Diff") 
+
+
+	*Final table
+	mlincom, twidth(20) title("Pr(Food insecurity) - Interaction Effects of Policy x Parent") dec(5)
+	
+	}	
+	
+	
+foreach var of varlist fb_leg_x_v2 fb_birthsupp_amt_y_v2 fb_modelfam_presch_y_v2 /// 
+	fb_modelfam_school_y_v2 fb_modelfam_teen_y_v2 fb_ccschsupp_v2 {
+	melogit fi_severe female age age2 i.marital i.rural_urban i.emp_status friends counton ///
+	log_gdp_percap_PPPcon_wb i.bottom40##i.chld_under15_c2##i.`var' || countrynew: , vce(cluster cid) intmethod(laplace) 
+
+	margins, dydx(chld_under15_c2) at(`var'=(0 1) bottom40=(0 1)) post force
+	estimates save "Results\`var'_sev_bottom_logit_M.ster", replace
+	estimates use "Results\`var'_sev_bottom_logit_M.ster"
+	estimate esample: 	fi_severe female age age2 marital rural_urban emp_status friends counton ///
+	log_gdp_percap_PPPcon_wb bottom40 chld_under15_c2 `var' 
+
+	mlincom, clear
+
+	qui mlincom 1, stat(est se p ll ul) add rowname("Pr(Food insecurity):Bottom 40, No policy") 
+	qui mlincom 2, stat(est se p ll ul) add rowname("Pr(Food insecurity):Bottom 40, Policy")
+	qui mlincom 3, stat(est se p ll ul) add rowname("Pr(Food insecurity):Upper 60, No Policy")
+	qui mlincom 4, stat(est se p ll ul) add rowname("Pr(Food insecurity):Upper 60, Policy")
+
+	*Effect of policy for households with no child
+	qui mlincom 1 - 2, stat(est se p ll ul) add rowname("Bottom 40")
+	*Effect of policy for households with a child
+	qui mlincom 3 - 4, stat(est se p ll ul) add rowname("Upper 60")
+	*2nd differences
+	qui mlincom (1 - 2) - (3 - 4), stat(est se p ll ul) add rowname("2nd Diff") 
+	qui mlincom (1 - 3) - (2 - 4), stat(est se p ll ul) add rowname("3rd Diff") 
+
+
+	*Final table
+	mlincom, twidth(20) title("Pr(Food insecurity) - Interaction Effects of Policy x Parent") dec(5)
+	
+	}	
+
+
+*** matching
+
+*** matching
+foreach var of varlist fb_leg_x_v2 /*fb_leg_x_v3*/ fb_birthsupp_amt_y_v2 fb_modelfam_presch_y_v2 /// 
+	fb_modelfam_school_y_v2 fb_modelfam_teen_y_v2 fb_ccschsupp_v2 {
+	melogit fi_moderate female age  i.marital i.rural_urban i.emp_status friends counton ///
+	 i.chld_under15_c2 i.`var'  if cem_matched==1 || countrynew: , vce(cluster cid) intmethod(laplace)
+	margins , at(`var'=(0 1)) post force
+	estimates save "Results\`var'_mod_logit_20200225_match_M.ster", replace
+	mlincom, clear
+	qui mlincom 1, stat(est se p ll ul) add rowname("Pr(Food insecurity): No policy") 
+	qui mlincom 2, stat(est se p ll ul) add rowname("Pr(Food insecurity): Policy")
+	qui mlincom 1 - 2, stat(est se p ll ul) add rowname("AME Child: Difference")
+	mlincom, twidth(20) title("Pr(Food insecurity) - Interaction Effects of Policy x Parent") dec(5)
+	}	
+
+
+
+foreach var of varlist fb_leg_x_v2 /*fb_leg_x_v3*/ fb_birthsupp_amt_y_v2 fb_modelfam_presch_y_v2 /// 
+	fb_modelfam_school_y_v2 fb_modelfam_teen_y_v2 fb_ccschsupp_v2 {
+	melogit fi_severe female age  i.marital i.rural_urban i.emp_status friends counton ///
+	 i.chld_under15_c2 i.`var'  if cem_matched==1 || countrynew: , vce(cluster cid) intmethod(laplace)
+	margins , at(`var'=(0 1)) post force
+	estimates save "Results\`var'_sev_logit_20200225_match_M.ster", replace
+	mlincom, clear
+	qui mlincom 1, stat(est se p ll ul) add rowname("Pr(Food insecurity): No policy") 
+	qui mlincom 2, stat(est se p ll ul) add rowname("Pr(Food insecurity): Policy")
+	qui mlincom 1 - 2, stat(est se p ll ul) add rowname("AME Child: Difference")
+	mlincom, twidth(20) title("Pr(Food insecurity) - Interaction Effects of Policy x Parent") dec(5)
+	}	
+
+	
+** doubly robust	
+
+
+foreach var of varlist fb_leg_x_v2 /*fb_leg_x_v3*/ fb_birthsupp_amt_y_v2 fb_modelfam_presch_y_v2 /// 
+	fb_modelfam_school_y_v2 fb_modelfam_teen_y_v2 fb_ccschsupp_v2 {
+	melogit fi_moderate female age  i.marital i.rural_urban i.emp_status friends counton ///
+	 i.chld_under15_c2 i.`var' log_pop log_gdp_percap_PPPcon_wb democM_v2 i.region_v3 if cem_matched==1 || countrynew: , vce(cluster cid) intmethod(laplace)
+	margins , at(`var'=(0 1)) post force
+	estimates save "Results\`var'_mod_logit_20200225_matchDR_M.ster", replace
+	mlincom, clear
+	qui mlincom 1, stat(est se p ll ul) add rowname("Pr(Food insecurity): No policy") 
+	qui mlincom 2, stat(est se p ll ul) add rowname("Pr(Food insecurity): Policy")
+	qui mlincom 1 - 2, stat(est se p ll ul) add rowname("AME Child: Difference")
+	mlincom, twidth(20) title("Pr(Food insecurity) - Interaction Effects of Policy x Parent") dec(5)
+	}	
+
+
+
+foreach var of varlist fb_leg_x_v2 /*fb_leg_x_v3*/ fb_birthsupp_amt_y_v2 fb_modelfam_presch_y_v2 /// 
+	fb_modelfam_school_y_v2 fb_modelfam_teen_y_v2 fb_ccschsupp_v2 {
+	melogit fi_severe female age  i.marital i.rural_urban i.emp_status friends counton ///
+	 i.chld_under15_c2 i.`var' log_pop log_gdp_percap_PPPcon_wb democM_v2 i.region_v3 if cem_matched==1 || countrynew: , vce(cluster cid) intmethod(laplace)
+	margins , at(`var'=(0 1)) post force
+	estimates save "Results\`var'_sev_logit_20200225_matchDR_M.ster", replace
+	mlincom, clear
+	qui mlincom 1, stat(est se p ll ul) add rowname("Pr(Food insecurity): No policy") 
+	qui mlincom 2, stat(est se p ll ul) add rowname("Pr(Food insecurity): Policy")
+	qui mlincom 1 - 2, stat(est se p ll ul) add rowname("AME Child: Difference")
+	mlincom, twidth(20) title("Pr(Food insecurity) - Interaction Effects of Policy x Parent") dec(5)
+	}	
+
+
+*** policy context
+
+
+pca minwage_ppp_v2 ui_gen oa_ben_y dc_benprov_x
+rotate
+predict policy_context
+
+melogit fi_moderate female age age2 i.marital i.rural_urban i.emp_status friends counton ///
+	log_gdp_percap_PPPcon_wb i.chld_under15_c2##i.fb_leg_x_v2 policy_context || countrynew: , vce(cluster cid) intmethod(laplace)
+
+estimates save "Results\fb_leg_x_v2_mod_logit_context.ster", replace
+estimates use "Results\fb_leg_x_v2_mod_logit_context.ster"
+estimate esample: 	fi_severe female age age2 marital rural_urban emp_status friends counton ///
+log_gdp_percap_PPPcon_wb chld_under15_c2 fb_leg_x_v2 policy_context
+
+	
+margins, dydx(chld_under15_c2) post force
+
+estimates save "Results\fb_leg_x_v2_mod_logit_context_1.ster", replace
+estimates use "Results\fb_leg_x_v2_mod_logit_context.ster"
+estimate esample: 	fi_severe female age age2 marital rural_urban emp_status friends counton ///
+log_gdp_percap_PPPcon_wb chld_under15_c2 fb_leg_x_v2 policy_context
+
+
+margins, dydx(fb_leg_x_v2) post force
+estimates save "Results\fb_leg_x_v2_mod_logit_context_2.ster", replace
+estimates use "Results\fb_leg_x_v2_mod_logit_context.ster"
+estimate esample: 	fi_severe female age age2 marital rural_urban emp_status friends counton ///
+log_gdp_percap_PPPcon_wb chld_under15_c2 fb_leg_x_v2 policy_context
+
+
+
+
+margins, dydx(chld_under15_c2) at(fb_leg_x_v2=(0 1)) post force
+estimates save "Results\fb_leg_x_v2_mod_logit_context_3.ster", replace
+
+
+mlincom, clear
+qui mlincom 1, stat(est se p) add rowname("Pr(Food insecurity): No policy") 
+qui mlincom 2, stat(est se p) add rowname("Pr(Food insecurity): Policy")
+qui mlincom 1 - 2, stat(est se p) add rowname("AME Child: Difference")
+mlincom, twidth(20) title("Pr(Food insecurity) - Interaction Effects of Policy x Parent")
+
+
+melogit fi_severe female age age2 i.marital i.rural_urban i.emp_status friends counton ///
+	log_gdp_percap_PPPcon_wb i.chld_under15_c2##i.fb_leg_x_v2 policy_context || countrynew: , vce(cluster cid) intmethod(laplace)
+estimates save "Results/fb_leg_x_v2_sev_logit_context.ster", replace
+estimates use "Results\fb_leg_x_v2_mod_logit_context.ster"
+estimate esample: 	fi_severe female age age2 marital rural_urban emp_status friends counton ///
+log_gdp_percap_PPPcon_wb chld_under15_c2 fb_leg_x_v2 policy_context
+
+	
+margins, dydx(chld_under15_c2) post force
+
+estimates save "Results\fb_leg_x_v2_sev_logit_context_1.ster", replace
+estimates use "Results\fb_leg_x_v2_sev_logit_context.ster"
+estimate esample: 	fi_severe female age age2 marital rural_urban emp_status friends counton ///
+log_gdp_percap_PPPcon_wb chld_under15_c2 fb_leg_x_v2 policy_context
+
+
+margins, dydx(fb_leg_x_v2) post force
+estimates save "Results\fb_leg_x_v2_sev_logit_context_2.ster", replace
+estimates use "Results\fb_leg_x_v2_sev_logit_context.ster"
+estimate esample: 	fi_severe female age age2 marital rural_urban emp_status friends counton ///
+log_gdp_percap_PPPcon_wb chld_under15_c2 fb_leg_x_v2 policy_context
+
+
+
+
+margins, dydx(chld_under15_c2) at(fb_leg_x_v2=(0 1)) post force
+estimates save "Results\fb_leg_x_v2_sev_logit_context_3.ster", replace
+
+
+mlincom, clear
+qui mlincom 1, stat(est se p) add rowname("Pr(Food insecurity): No policy") 
+qui mlincom 2, stat(est se p) add rowname("Pr(Food insecurity): Policy")
+qui mlincom 1 - 2, stat(est se p) add rowname("AME Child: Difference")
+mlincom, twidth(20) title("Pr(Food insecurity) - Interaction Effects of Policy x Parent")
+
+
+
+*** oecd
+foreach var of varlist fb_leg_x_v2 fb_birthsupp_amt_y_v2 fb_modelfam_presch_y_v2 /// 
+	fb_modelfam_school_y_v2 fb_modelfam_teen_y_v2 fb_ccschsupp_v2 {
+	melogit fi_moderate female age age2 i.marital i.rural_urban i.emp_status friends counton ///
+	log_gdp_percap_PPPcon_wb i.chld_under15_c2 i.`var' oecd_family_gdp || countrynew: , vce(cluster cid) intmethod(laplace)
+	margins , at(`var'=(0 1)) post force
+	estimates save "Results\`var'_sev_logit_20200225_oecd_M.ster", replace
+	mlincom, clear
+	qui mlincom 1, stat(est se p ll ul) add rowname("Pr(Food insecurity): No policy") 
+	qui mlincom 2, stat(est se p ll ul) add rowname("Pr(Food insecurity): Policy")
+	qui mlincom 1 - 2, stat(est se p ll ul) add rowname("AME Child: Difference")
+	mlincom, twidth(20) title("Pr(Food insecurity) - Interaction Effects of Policy x Parent") dec(5)
+	}	
+
+	
+
+foreach var of varlist /*fb_leg_x_v2 fb_birthsupp_amt_y_v2 fb_modelfam_presch_y_v2 /// 
+	fb_modelfam_school_y_v2 fb_modelfam_teen_y_v2*/ fb_ccschsupp_v2 {
+	melogit fi_severe female age  i.marital i.rural_urban i.emp_status friends counton ///
+	log_gdp_percap_PPPcon_wb i.chld_under15_c2 i.`var' oecd_family_gdp || countrynew: , vce(cluster cid) intmethod(laplace) difficult
+	margins , at(`var'=(0 1)) post force
+	estimates save "Results\`var'_sev_logit_20200225_oecd_M.ster", replace
+	mlincom, clear
+	qui mlincom 1, stat(est se p ll ul) add rowname("Pr(Food insecurity): No policy") 
+	qui mlincom 2, stat(est se p ll ul) add rowname("Pr(Food insecurity): Policy")
+	qui mlincom 1 - 2, stat(est se p ll ul) add rowname("AME Child: Difference")
+	mlincom, twidth(20) title("Pr(Food insecurity) - Interaction Effects of Policy x Parent") dec(5)
+	}
+
+
+**** free schooling
+
+foreach var of varlist fb_leg_x_v2 fb_birthsupp_amt_y_v2 fb_modelfam_presch_y_v2 /// 
+	fb_modelfam_school_y_v2 fb_modelfam_teen_y_v2 fb_ccschsupp_v2 {
+	melogit fi_moderate female age age2 i.marital i.rural_urban i.emp_status friends counton ///
+	log_gdp_percap_PPPcon_wb i.chld_under15_c2 i.`var' up_sec_free || countrynew: , vce(cluster cid) intmethod(laplace)
+	margins , at(`var'=(0 1)) post force
+	estimates save "Results\`var'_sev_logit_20200225_freesch_M.ster", replace
+	mlincom, clear
+	qui mlincom 1, stat(est se p ll ul) add rowname("Pr(Food insecurity): No policy") 
+	qui mlincom 2, stat(est se p ll ul) add rowname("Pr(Food insecurity): Policy")
+	qui mlincom 1 - 2, stat(est se p ll ul) add rowname("AME Child: Difference")
+	mlincom, twidth(20) title("Pr(Food insecurity) - Interaction Effects of Policy x Parent") dec(5)
+	}	
+
+	
+	
+foreach var of varlist fb_leg_x_v2 fb_birthsupp_amt_y_v2 fb_modelfam_presch_y_v2 /// 
+	fb_modelfam_school_y_v2 fb_modelfam_teen_y_v2 fb_ccschsupp_v2 {
+	melogit fi_severe female age age2 i.marital i.rural_urban i.emp_status friends counton ///
+	log_gdp_percap_PPPcon_wb i.chld_under15_c2 i.`var' up_sec_free || countrynew: , vce(cluster cid) intmethod(laplace)
+	margins , at(`var'=(0 1)) post force
+	estimates save "Results\`var'_sev_logit_20200225_freesch_M.ster", replace
+	mlincom, clear
+	qui mlincom 1, stat(est se p ll ul) add rowname("Pr(Food insecurity): No policy") 
+	qui mlincom 2, stat(est se p ll ul) add rowname("Pr(Food insecurity): Policy")
+	qui mlincom 1 - 2, stat(est se p ll ul) add rowname("AME Child: Difference")
+	mlincom, twidth(20) title("Pr(Food insecurity) - Interaction Effects of Policy x Parent") dec(5)
+	}	
+	
+
+	
+*** household income
+foreach var of varlist fb_leg_x_v2 /*fb_leg_x_v3*/ fb_birthsupp_amt_y_v2 fb_modelfam_presch_y_v2 /// 
+	fb_modelfam_school_y_v2 fb_modelfam_teen_y_v2 fb_ccschsupp_v2 {
+	melogit fi_moderate female age age2 i.marital i.rural_urban i.emp_status friends counton ///
+	log_gdp_percap_PPPcon_wb i.chld_under15_c2 i.`var' log_HHinc_percap_PPP || countrynew: , vce(cluster cid) intmethod(laplace)
+	margins , at(`var'=(0 1)) post force
+	estimates save "Results\`var'_sev_logit_20200225_freesch_M.ster", replace
+	mlincom, clear
+	qui mlincom 1, stat(est se p ll ul) add rowname("Pr(Food insecurity): No policy") 
+	qui mlincom 2, stat(est se p ll ul) add rowname("Pr(Food insecurity): Policy")
+	qui mlincom 1 - 2, stat(est se p ll ul) add rowname("AME Child: Difference")
+	mlincom, twidth(20) title("Pr(Food insecurity) - Interaction Effects of Policy x Parent") dec(5)
+	}	
+
+	
+	
+foreach var of varlist fb_leg_x_v2 /*fb_leg_x_v3*/ fb_birthsupp_amt_y_v2 fb_modelfam_presch_y_v2 /// 
+	fb_modelfam_school_y_v2 fb_modelfam_teen_y_v2 fb_ccschsupp_v2 {
+	melogit fi_severe female age age2 i.marital i.rural_urban i.emp_status friends counton ///
+	log_gdp_percap_PPPcon_wb i.chld_under15_c2 i.`var' log_HHinc_percap_PPP || countrynew: , vce(cluster cid) intmethod(laplace)
+	margins , at(`var'=(0 1)) post force
+	estimates save "Results\`var'_sev_logit_20200225_freesch_M.ster", replace
+	mlincom, clear
+	qui mlincom 1, stat(est se p ll ul) add rowname("Pr(Food insecurity): No policy") 
+	qui mlincom 2, stat(est se p ll ul) add rowname("Pr(Food insecurity): Policy")
+	qui mlincom 1 - 2, stat(est se p ll ul) add rowname("AME Child: Difference")
+	mlincom, twidth(20) title("Pr(Food insecurity) - Interaction Effects of Policy x Parent") dec(5)
+	}	
+
+		
+	
+log off 
+log close
+
